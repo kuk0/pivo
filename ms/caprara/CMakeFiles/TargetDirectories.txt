@@ -1,0 +1,3 @@
+/home/kuko/SVN/vlaciky/ms/caprara/CMakeFiles/caprara_main.dir
+/home/kuko/SVN/vlaciky/ms/caprara/CMakeFiles/grappa_capr.dir
+/home/kuko/SVN/vlaciky/ms/caprara/CMakeFiles/grappa_dist.dir

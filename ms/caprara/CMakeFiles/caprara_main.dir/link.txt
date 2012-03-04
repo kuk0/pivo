@@ -1,0 +1,1 @@
+/usr/bin/c++      CMakeFiles/caprara_main.dir/caprara.o  -o caprara_main -rdynamic libgrappa_capr.so libgrappa_dist.so -Wl,-rpath,/home/kuko/SVN/vlaciky/ms/caprara 

@@ -1,0 +1,1 @@
+/usr/bin/gcc  -fPIC   -shared -Wl,-soname,libgrappa_dist.so -o libgrappa_dist.so CMakeFiles/grappa_dist.dir/invdist.o CMakeFiles/grappa_dist.dir/med_util.o CMakeFiles/grappa_dist.dir/uf.o 

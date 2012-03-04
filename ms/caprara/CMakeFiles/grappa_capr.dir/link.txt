@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC   -shared -Wl,-soname,libgrappa_capr.so -o libgrappa_capr.so CMakeFiles/grappa_capr.dir/inversion_median_alberto.o 
