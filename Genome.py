@@ -1,4 +1,6 @@
-from random import choice, shuffle, sample
+# TODO: median_sample by nemal byt len pre MultiLinDCJ 
+#from MultiLinDCJ import MultiLinDCJ
+from random import choice, shuffle, sample, randint
 
 class Genome:
     def __init__ (self, s):
@@ -11,11 +13,39 @@ class Genome:
         raise NotImplementedError( "Should have implemented this" )
     def numch (self):
         raise NotImplementedError( "Should have implemented this" )
+    def linear (self):
+        """
+        Is the genome linear?
+        """
+        L, C = self.numch()
+        return (C == 0) and (L == 1)
+
+    def multilin (self):
+        """
+        Is the genome multilinear?
+        """
+        L, C = self.numch()
+        return (C == 0)
+
+    def circular (self):
+        """
+        Is the genome circular?
+        """
+        L, C = self.numch()
+        return (L == 0) and (C == 1)
+
+    def multicirc (self):
+        """
+        Is the genome multicircular?
+        """
+        L, C = self.numch()
+        return (L == 0)
+
     def dist (self, B):
         raise NotImplementedError( "Should have implemented this" )
     def neigh (self):
         raise NotImplementedError( "Should have implemented this" )
-    def median_solver (self, g1, g2, g3):
+    def median_solver (self, g1, g2, g3, errors=0):
         raise NotImplementedError( "Should have implemented this" )
 
     def median_cloud (self, g1, g2, g3, MAX=300):
@@ -52,6 +82,32 @@ class Genome:
 	r = self.median_solver(g1, g2, g3)
 	if len(r) <= MAX: return r
         else: return sample(r, MAX)
+        
+    def random_median (self, g1, g2, g3):
+        pi = range(1,len(g1)+1)
+        shuffle(pi)
+        pi = [0] + pi
+        ro = range(0,len(g1)+1)
+        for i in xrange(1, len(pi)):
+            ro[pi[i]] = i
+            if randint(0,1) == 0:
+                ro[pi[i]] = -i
+                pi[i] = -pi[i]
+        h1 = self.permute(g1, pi)
+        h2 = self.permute(g2, pi)
+        h3 = self.permute(g3, pi)
+        m = self.median_solver(h1, h2, h3)
+        for i in xrange(0, len(m)):
+            m[i] = self.permute(m[i], ro) 
+        return m
+    
+    def median_sample (self, g1, g2, g3, MAX=5):
+        s = set()
+        for i in xrange(0, 2*MAX):
+            for m in self.random_median(g1, g2, g3):
+                s.add(m)
+            if len(s) >= MAX: break
+        return list(s)
 
 def id_genome (n):
     """

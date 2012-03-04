@@ -110,7 +110,7 @@ def arrow(z, w, s=0, col=None, lw = 0.02):
   if col == None: col = current_color
   z = complex(z); w = complex(w)
   cc.stroke (path.line (u*z.real, v*z.imag, u*w.real, v*w.imag), [st[s], deco.earrow.normal, col, style.linewidth(lw)]);
-def barrow(z, w, s=0, col=None): arrow (z, w, s, col, 0.05)
+def barrow(z, w, s=0, col=None): arrow (z, w, s, col, 0.04)
 def arrow2(z, w=0j, s=0, col=None, lw = 0.02):
   global cc, u, v, current_color
   if col == None: col = current_color

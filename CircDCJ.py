@@ -1,15 +1,16 @@
 import os
 import sys
 from DCJ import DCJ
+from CircRev import CircRev
 from random import choice, randint
 from copy import deepcopy
 
 class CircDCJ(DCJ):
     #def __init__ (self, s):
-        #g = DCJ(s)
-        #if not g.circular():
-            #print "Warning:", g, "not circular"
-        #self = self.circularize(g)
+        #DCJ.__init__(self,s)
+        #if not self.circular():
+        #    print "Warning:", self.__str__(), "not circular"
+        #self = self.circularize3()   # TODO
 
     def median (self, g1, g2, g3, errors=0): # pomocou median solvera
         """
@@ -57,11 +58,11 @@ class CircDCJ(DCJ):
                 return [g1, g2, g3]
             else:
                 print "BIO ERROR"
-                return self.median_solver(g1, g2, g3, errors+1)
-	r = self.circularize(M)
+                return self.median(g1, g2, g3, errors+1)
+        r = self.circularize3(M)
         return [r,]
 
-    def circularize (self, g):
+    def circularize3 (self, g):
         """
         Returns a set of circular genomes close to the genome.
         """
@@ -106,11 +107,11 @@ class CircDCJ(DCJ):
         #return [CircDCJ(h._self)]
 
     def rand_neigh(self):
-        g = DCJ(self._g)
+        g = CircRev(self.__str__())
         h = g.rand_neigh()
         #while not h.circular():
             #h = g.rand_neigh()
-        return CircDCJ(h._g)
+        return CircDCJ(h.__str__())
     
     def neigh(self):
         c = []
@@ -133,4 +134,4 @@ class CircDCJ(DCJ):
             print z[0]
             print z[1]
             print z[2]
-        return [self.circularize(h) for h in neigh]
+        return [self.circularize3(h) for h in neigh]

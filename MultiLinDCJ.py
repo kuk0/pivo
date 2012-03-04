@@ -1,7 +1,7 @@
 import os
 import sys
 from DCJ import DCJ
-from random import choice, randint
+from random import choice, randint, shuffle
 from copy import deepcopy
 
 class MultiLinDCJ(DCJ):
@@ -14,6 +14,10 @@ class MultiLinDCJ(DCJ):
             print g2
             print g3
             raise TypeError("The input genomes are not multilinear")
+        if MultiLinDCJ.nMedianCalls > 0:
+            MultiLinDCJ.nMedianCalls -= 1
+            if MultiLinDCJ.nMedianCalls == 0:
+                sys.exit()
         
         r = str(randint(0,99999))
         inf = "input" + r
@@ -92,3 +96,14 @@ class MultiLinDCJ(DCJ):
                     if u.multilin():
                         c.append(u)
         return c
+
+    def permute (self, g, pi):
+        g = g.__str__().split()
+        for i in xrange(0,len(g)):
+            if g[i] != '$' and g[i] != '@':
+                x = int(g[i])
+                if x > 0:
+                    g[i] = str(pi[x])
+                else:
+                    g[i] = str(-pi[-x])
+        return MultiLinDCJ (" ".join(g))

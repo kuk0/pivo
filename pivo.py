@@ -43,8 +43,7 @@ def LR (g):
 
 #g1 = MultiLinDCJ ("-1 -7 4 -2 -6 9 -3 5 -8 $") 
 #g2 = MultiLinDCJ ("1 7 8 9 2 3 4 5 6 $")
-#g3 = MultiLinDCJ ("2 9 4 6 -3 8 1 5 -7 $") 
-#g1.median (g1, g2, g3)
+#g3 = MultiLinDCJ ("2 9 4 6 -3 8 1 5 -7 $")
 #sys.exit();
 
 parser = argparse.ArgumentParser(prog='pivo')
@@ -69,26 +68,27 @@ parser.add_argument('-m', '--model',
                           +'(dcj is the default)')
 parser.add_argument('-s', '--strategy',
                     type = int, 
-                    choices = [0, 1, 2, 3, 4],
+                    choices = [0, 1, 2, 3, 4, 5, 6, 7],
                     default = 2,
                     #metavar = 'M',
                     help = '0 - steinerization\r'
                           +'1 - medians\n'
                           +'2 - medians with neighbours\n'
                           +'3 - all neighbours\n'
-                          +'4 - better neighbours\n')
+                          +'4 - better neighbours\n'
+                          +'5 - median sample\n')
 parser.add_argument('-x',
                     type=int,
                     default = -1,
-                    help = 'start [when partitioning ')
+                    help = 'start [when partitioning] ')
 parser.add_argument('-y',
                     type=int,
                     default = 20,
-                    help = 'chunks size [when partitioning ')
+                    help = 'chunks size [when partitioning] ')
 parser.add_argument('-b',
                     type=int,
                     default = 0,
-                    help = 'start [when partitioning ')
+                    help = 'start [when partitioning] ')
 
 args = parser.parse_args()
 
@@ -111,6 +111,9 @@ elif args.model == 'rev':
     History.Genome = LinRev
 elif args.model == 'circ-rev':
     History.Genome = CircRev
+
+# 0 = po 1000
+History.Genome.nMedianCalls = -1
     
 T = Tree(wdir)
 h = History.History(T, wdir)
@@ -135,6 +138,16 @@ elif s == 3:
 elif s == 4:
     h.local_opt = h.local_opt_better_neighbours
     s = 'better neighbours'
+elif s == 5:
+    h.local_opt = h.local_opt_medians
+    Genome.median = Genome.median_sample
+    s = 'random sample of medians'
+elif s == 6:
+    h.local_opt = h.local_opt_neighbours2
+    s = 'all neighbours'
+elif s == 7:
+    h.local_opt = h.local_opt_circ
+    s = 'get rid of extra chromosomes'
 print 'strategy:', s
 
 h.x = args.x
@@ -156,17 +169,21 @@ h.chunks = args.y
 
 for i in xrange(0,n):
     if p==0:
-        h.rand_hist(1)
+        h.rand_hist(2)
     elif i%p == 0:
         l = os.listdir('data/'+wdir+'/')
         l = [s for s in l if '0' <= s[0] <= '9']
-        print l
+        #print l
         if len(l) > 0:
             best = min(l)
             h.read (best)
             print best
+            #h.mutate()
             print h.score()
-        else: h.rand_hist(1)
+        else: h.rand_hist(2)
     h.local_opt()
-    #if p>0: h.mutate()
     #h.write()
+    #print "TABU:", [len(x) for x in h.TABU[T.n:T.N]]
+    
+#h.local_opt_tabu()
+#h.write()

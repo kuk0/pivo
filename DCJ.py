@@ -42,6 +42,40 @@ class DCJ(Genome):
     def __len__ (self):
         return self.n/2
         
+#    def _next (self, v, b):
+#        if b:
+#            return (j+1) if j & 1 == 0 else (j-1)
+#        else:
+#            return self._g[j - 1]
+
+        
+    def _compchr (self, v, i):
+        """
+        Auxilliary function creating the string description of the genome.
+        """
+        j = i
+        s = []
+        while not v[j]:
+            v[j] = True
+            s.append(j)
+            if j % 2 == 0:
+                s.append(j+1)
+                v[j + 1] = True
+                j = self._g[j + 1]
+            else:
+                s.append(j-1)
+                v[j - 1] = True
+                j = self._g[j - 1]
+        return s
+
+    def _circ_chromosomes (self):
+        v = self.n * [False]
+        s = []
+        for i in xrange(0, self.n):
+            if not v[i]:
+                s.append(self._compchr (v, i))
+        return s
+        
     def _compstr (self, v, i):
         """
         Auxilliary function creating the string description of the genome.
@@ -165,34 +199,6 @@ class DCJ(Genome):
             self._g[p], self._g[p2], self._g[q] = q, p2, p
         else: # {p,q} {p2,q2} --> {p,p2} {q,q2}
             self._g[p], self._g[p2], self._g[q], self._g[q2] = q, q2, p, p2
-
-    def linear (self):
-        """
-        Is the genome linear?
-        """
-        L, C = self.numch()
-        return (C == 0) and (L == 1)
-
-    def multilin (self):
-        """
-        Is the genome multilinear?
-        """
-        L, C = self.numch()
-        return (C == 0)
-
-    def circular (self):
-        """
-        Is the genome circular?
-        """
-        L, C = self.numch()
-        return (L == 0) and (C == 1)
-
-    def multicirc (self):
-        """
-        Is the genome multicircular?
-        """
-        L, C = self.numch()
-        return (L == 0)
 
     def tempcirc (self):
         """

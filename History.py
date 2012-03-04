@@ -5,7 +5,7 @@ from copy import deepcopy, copy
 from random import choice, randint, shuffle, sample
 from numpy.random import poisson
 import time
-from pyxfigs import *
+#from pyxfigs import *
 from CircDCJ import CircDCJ
 
 chngf = open ('changes', 'a')
@@ -38,14 +38,15 @@ class History:
     def __init__ (self, T, wdir, simul=False):
         "Zo suboru T vo wdir nacita genomy v listoch (v liste moze byt aj viac moznosti)"
         self.T = T
+        N, n = T.N, T.n
         self.wdir = 'data' + os.sep + wdir
         if simul:
-            self.g = [0] * self.T.N
+            self.g = [0] * N
             return
         f = open(self.wdir + os.sep + 'G', 'r')
         self.g = []
         self.input = []
-        for i in xrange(0, self.T.n):
+        for i in xrange(0, n):
             self.input.append([])
         i = 0
         for line in f:
@@ -54,16 +55,22 @@ class History:
             pos = line.find(' ')
             self.input[self.T.leaf[line[0:pos]]].append(Genome(line[pos + 1:]))
         f.close()
-        #for i in xrange(0, self.T.n):
+        #for i in xrange(0, n):
             #print self.T.name[i], self.input[i]
-        #print self.T.n, self.T.N
-        for i in xrange(0, self.T.n):
+        #print n, N
+        for i in xrange(0, n):
             self.g.append(deepcopy(choice(self.input[i])))
-        for i in xrange(self.T.n, self.T.N):
+        for i in xrange(n, N):
             if randint(0, 1): self.g.append (self.g[self.T.right[i]])
             else: self.g.append (self.g[self.T.left[i]])
-        self.chng = [0] * self.T.N
+        self.chng = N * [0]
         self.cand()
+        self.TABU = []
+        for i in xrange(0,N):
+            self.TABU.append({})
+        self.tmpTABU = []
+        for i in xrange(0,N):
+            self.tmpTABU.append(set())
 
     def __str__ (self):
         s = ""
@@ -263,9 +270,18 @@ class History:
         if v < self.T.n: return
         self._replace (M, self.T.left[v], M[v][i][0])
         self._replace (M, self.T.right[v], M[v][i][1])
-
-    def _opt_sols (self, B, M, ns, u, i, m):
+        
+    def _purge (self):
+        N, n = self.T.N, self.T.n
+        for i in xrange(n,N):
+            self.c[i] = [g for g in self.c[i] if g not in self.TABU[i] and g not in self.tmpTABU[i]]
+            #+[self.c[i][0]]
+        
+    def _opt_sols (self, B, M, u, i, m, vis, S):
         if u < self.T.n: return
+        if (u,i) in vis: return
+        vis.add((u,i))
+        self.TABU[u][deepcopy(self.c[u][i])] = S
         v, w = self.T.left[u], self.T.right[u]
         lv, lw = len(self.c[v]), len(self.c[w])
         bl = B[v][M[u][i][0]]
@@ -274,65 +290,69 @@ class History:
         dr = self.c[w][M[u][i][1]].dist(self.c[u][i])
         for j in xrange(0, lv):
             dd = self.c[v][j].dist(self.c[u][i])
-            if ns[v][j] > 0 and B[v][j] + dd == bl + dl:
-                ns[v][j] = -ns[v][j]
-                self._opt_sols (B, M, ns, v, j, bl)
+            if B[v][j] + dd == bl + dl:
+                self._opt_sols (B, M, v, j, bl, vis, S)
         for j in xrange(0, lw):
             dd = self.c[w][j].dist(self.c[u][i])
-            if ns[w][j] > 0 and B[w][j] + dd == br + dr:
-                ns[w][j] = -ns[w][j]
-                self._opt_sols (B, M, ns, w, j, br)
+            if B[w][j] + dd == br + dr:
+                self._opt_sols (B, M, w, j, br, vis, S)
 
-    def opt_neigh (self):
+    def opt_neigh (self, tabu=True, newtabu=False):
         "Najde historiu v okoli s najmensim skore"
         global chngf#, heurf
-        if len(self.c[self.T.left[self.T.N - 1]]) < len(self.c[self.T.right[self.T.N - 1]]):
-            self.c[self.T.N - 1] = self.c[self.T.left[self.T.N - 1]]
+        N, n = self.T.N, self.T.n
+        left, right = self.T.left, self.T.right
+        if not tabu:
+            self._purge()
+        c = self.c
+        if len(c[left[N - 1]]) < len(c[right[N - 1]]):
+            c[N - 1] = c[left[N - 1]]
 ##      self.heur[self.T.N-1] = self.heur[self.T.left[self.T.N-1]]
         else:
-            self.c[self.T.N - 1] = self.c[self.T.right[self.T.N - 1]]
+            c[N - 1] = c[right[N - 1]]
 ##      self.heur[self.T.N-1] = self.heur[self.T.right[self.T.N-1]]
         B, M = [], []
-        print [len(self.c[i]) for i in xrange(self.T.n, self.T.N)]
+        print [len(c[i]) for i in xrange(n, N)]
 ##    ns = [0]*self.T.N
-##    for u in xrange(0,self.T.N):
+##    for u in xrange0,self.T.N):
 ##      ns[u] = [1]*len(self.c[u])
 ##      if len(self.heur[u]) != len(self.c[u]): print u, '!!!!!'
-        for u in xrange(0, self.T.n):
-            B.append(len(self.c[u]) * [0])
+        for u in xrange(0, n):
+            B.append(len(c[u]) * [0])
             M.append([])
-            for i in xrange(0, len(self.c[u])):
+            for i in xrange(0, len(c[u])):
                 M[u].append([0, 0])
-        for u in xrange(self.T.n, self.T.N):
-            v, w = self.T.left[u], self.T.right[u]
-            ul, vl, wl = len(self.c[u]), len(self.c[v]), len(self.c[w])
+        for u in xrange(n, N):
+            v, w = left[u], right[u]
+            ul, vl, wl = len(c[u]), len(c[v]), len(c[w])
             B.append([]); M.append([])
             for i in xrange(0, ul):
-                B[u].append(penalty(self.c[u][i].numch()))
+                B[u].append(penalty(c[u][i].numch()))
                 M[u].append([0, 0])
             for i in xrange(0, ul):
                 m, mi, q = 999999, 0, 1
                 for j in xrange(0, vl):
-                    t = B[v][j] + self.c[u][i].dist(self.c[v][j])
+                    t = B[v][j] + c[u][i].dist(c[v][j])
 ##          if t == m: q += ns[v][j]
                     if t < m: m, mi = t, j # , q = t, j, ns[v][j]
                 B[u][i], M[u][i][0] = B[u][i] + m, mi #, ns[u][i] = B[u][i]+m, mi, q
                 m, mi, q = 999999, 0, 1
                 for j in xrange(0, wl):
-                    t = B[w][j] + self.c[u][i].dist(self.c[w][j])
+                    t = B[w][j] + c[u][i].dist(c[w][j])
 ##          if t == m: q += ns[w][j]
                     if t < m: m, mi = t, j # , q = t, j, ns[w][j]
                 B[u][i], M[u][i][1] = B[u][i] + m, mi
 ##        ns[u][i] *= q
         m, mi, q = 999999, 0, 1
-        for i in xrange(0, len(self.c[self.T.N - 1])):
+        for i in xrange(0, len(c[N - 1])):
 ##      if B[self.T.N-1][i] == m: q += ns[self.T.N-1][i]
-            if B[self.T.N - 1][i] < m: m, mi = B[self.T.N - 1][i], i #, q = B[self.T.N-1][i], i, ns[self.T.N-1][i]
+            if B[N - 1][i] < m: m, mi = B[N - 1][i], i #, q = B[self.T.N-1][i], i, ns[self.T.N-1][i]
 
-##    for i in xrange(0,len(self.c[self.T.N-1])):
-##      if B[self.T.N-1][i] == m:
-##        ns[self.T.N-1][i] = -ns[self.T.N-1][i]
-##        self._opt_sols(B, M, ns, self.T.N-1, i, m)
+        if newtabu:
+            for i in xrange(0,len(c[N-1])):
+                if B[N-1][i] == m:
+                    ## ns[N-1][i] = -ns[N-1][i]
+                    self._opt_sols(B, M, N-1, i, m, set(), m)
 ##    hsug = [0]*9
 ##    hopt = [0]*9
 ##    for v in xrange(self.T.n,self.T.N):
@@ -402,7 +422,7 @@ class History:
             self.median()
             s, s2 = s2, self.opt_neigh()
             print s2
-        print self
+        print selfobject
         
     def local_opt_better_neighbours (self):
         "Najde lokalne minimum historii"
@@ -412,6 +432,22 @@ class History:
             self.neigh2()
             s, s2 = s2, self.opt_neigh()
             print s2
+        print self
+        
+    def local_opt_neighbours2 (self):
+        "Najde lokalne minimum historii"
+        self.cand()
+        self.neigh()
+        s, s2 = 9999, self.opt_neigh()
+        print s2
+        while s2 < s:
+            self.cand()
+            self.neigh2()
+            s, s2 = s2, self.opt_neigh()
+            print s2
+        self.cand()
+        self.neigh()
+        self.opt_neigh(newtabu=True)
         print self
         
     def local_opt_neighbours (self):
@@ -433,9 +469,22 @@ class History:
                     self.cand()
                     self.neigh_part(i, i+y, j, j+y)
                     s2 = self.opt_neigh()
-                    print i, j, '>', s2, self.noncirc()            
+                    #print i, j, '>', s2, self.noncirc()            
         print self
     
+    def local_opt_tabu (self):
+        "Najde lokalne minimum historii"
+        self.cand()
+        for i in xrange(self.T.n,self.T.N):
+            self.c[i] = self.TABU[i].keys()
+        s, s2 = 9999, self.opt_neigh(True)
+        while s2 < s:
+            self.cand()
+            self.neigh2()
+            s, s2 = s2, self.opt_neigh(True)
+            print s2
+        print self
+        
     def noncirc (self):
         num = 0
         for i in xrange(self.T.n, self.T.N):
@@ -469,36 +518,97 @@ class History:
                 print s2
         print "---"
         
+    def local_opt_circ (self):
+        N, n = self.T.N, self.T.n
+        g = self.g
+        for i in xrange(n,N):
+            if g[i].circular(): continue
+            gg = g[i]
+            a, b = gg._circ_chromosomes()
+            if len(a) < len(b):
+                a, b = b, a
+            print i-n, ". genom ma", gg.numch()
+            for p in a:
+                self.cand();
+                q = gg._g[p]
+                for s in b:
+                    t = gg._g[s]
+                    h = deepcopy(g[i])
+                    h.swap(p,q,s,t)
+                    self.c[i].append(h)
+                    for j in xrange(n,N):
+                        h = deepcopy(g[j])
+                        qq, pp, tt, ss = h._g[p], h._g[q], h._g[s], h._g[t]
+                        if q!=qq or s!=ss:
+                            h.swap(p,qq,ss,t)
+                            if h.circular(): self.c[j].append(h);
+                        if p!=pp or s!=ss: 
+                            h = deepcopy(g[j]); h.swap(pp,q,ss,t);
+                            if h.circular(): self.c[j].append(h);
+                        if q!=qq or t!=tt:
+                            h = deepcopy(g[j]); h.swap(p,qq,s,tt);
+                            if h.circular(): self.c[j].append(h);
+                        if p!=pp or t!=tt:
+                            h = deepcopy(g[j]); h.swap(pp,q,s,tt);
+                            if h.circular(): self.c[j].append(h);
+                self.opt_neigh()
+                if g[i].circular():
+                    print "HURA"
+                    break
+        print self
+    
+    def _rand_leaf(self, desc): # z int 0,...,a-1,b+1,...,n-1
+        a, b = desc
+        x = randint (0,a+self.T.n-b-2)
+        if x < a: return x
+        else: return (x-a) + (b+1) 
+         
     def init_hist (self):
         n, N = self.T.n, self.T.N
         left, right, parent = self.T.left, self.T.right, self.T.parent
         desc = []
         for i in xrange(0, n):
-            desc.append([i])
+            desc.append((i,i))
         for i in xrange(n, N):
-            desc.append(desc[left[i]]+desc[right[i]])
-#	    print 'desc', i, desc[i]
-    	desc2 = N*[0]
-        ll, rr = left[N-1], right[N-1]
-        desc2[ll] = copy(desc[rr])
-        desc2[rr] = copy(desc[ll])
-#	print 'desc2', ll, desc2[ll]
-#	print 'desc2', rr, desc2[rr]
-        for i in reversed(xrange(n, N-1)):
-            if i == ll or i == rr: continue
-            desc2[i] = copy(desc2[parent[i]])
-            if left[parent[i]] == i: # lavy syn
-                desc2[i].extend(desc[right[parent[i]]])
-            else:
-                desc2[i].extend(desc[left[parent[i]]])
-#	    print 'desc2', i, desc2[i]
+            desc.append((desc[left[i]][0],desc[right[i]][1]))
         for i in xrange(n, N-1):
-            for k in xrange(0,10):
-                z0 = self.g[choice(desc[left[i]])]
-                z1 = self.g[choice(desc[right[i]])]
-                z2 = self.g[choice(desc2[i])]
+            for k in xrange(0,1): # TODO
+                z0 = self.g[randint(desc[left[i]][0],desc[left[i]][1])]
+                z1 = self.g[randint(desc[right[i]][0],desc[right[i]][1])]
+                z2 = self.g[self._rand_leaf(desc[i])]
 #                print i, ':', choice(desc[left[i]]), choice(desc[right[i]]), choice(desc2[i])
-                self.c[i].extend (self.g[i].median(z0, z1, z2, MAX=20))
+                self.c[i].extend (self.g[i].median(z0, z1, z2)) #, MAX=20
+            
+#    def init_hist (self):
+#        n, N = self.T.n, self.T.N
+#        left, right, parent = self.T.left, self.T.right, self.T.parent
+#        desc = []
+#        for i in xrange(0, n):
+#            desc.append([i])
+#        for i in xrange(n, N):
+#            desc.append(desc[left[i]]+desc[right[i]])
+##	    print 'desc', i, desc[i]
+#    	desc2 = N*[0]
+#        ll, rr = left[N-1], right[N-1]
+#        desc2[ll] = copy(desc[rr])
+#        desc2[rr] = copy(desc[ll])
+##	print 'desc2', ll, desc2[ll]
+##	print 'desc2', rr, desc2[rr]
+#        for i in reversed(xrange(n, N-1)):
+#            if i == ll or i == rr: continue
+#            desc2[i] = copy(desc2[parent[i]])
+#            if left[parent[i]] == i: # lavy syn
+#                desc2[i].extend(desc[right[parent[i]]])
+#            else:
+#                desc2[i].extend(desc[left[parent[i]]])
+##	    print 'desc2', i, desc2[i]
+#        for i in xrange(n, N-1):
+#            for k in xrange(0,10):
+#                z0 = self.g[choice(desc[left[i]])]
+#                z1 = self.g[choice(desc[right[i]])]
+#                z2 = self.g[choice(desc2[i])]
+##                print i, ':', choice(desc[left[i]]), choice(desc[right[i]]), choice(desc2[i])
+#                self.c[i].extend (self.g[i].median(z0, z1, z2)) #, MAX=20
 
     def paths_opt (self):
         self.cand()
@@ -526,8 +636,15 @@ class History:
 
     def mutate (self):
         # i = randint (self.T.n,self.T.N-1)
+        for i in xrange(0,self.T.N):
+            self.tmpTABU[i] = set()
         for i in xrange(0, self.T.N):
-            self.g[i] = self.g[i].rand_neigh().rand_neigh() #.rand_neigh() #.rand_neigh().rand_neigh()
+            self.g[i] = self.g[i].rand_neigh()
+            self.tmpTABU[i].add(deepcopy(self.g[i]))
+#            self.g[i] = self.g[i].rand_neigh()
+#            self.tmpTABU[i].add(deepcopy(self.g[i]))
+            self.g[i] = self.g[i].rand_neigh()
+            #self.g[i] = self.g[i].rand_neigh().rand_neigh() #.rand_neigh() #.rand_neigh().rand_neigh()
 
     def rand_hist (self, restr=None):
         g = range(1, len(self.input[0][0]) + 1)
@@ -631,18 +748,26 @@ class History:
                 self.c[i].extend (list(s))
 
     def _simul (self, v, mean):
-        d = poisson (mean, 1)[0]
-        G = Genome(self.g[self.T.parent[v]])
+        T = self.T
+        if T.parent[v] == T.N-1:
+            d = poisson (mean*0.5, 1)[0]
+        else:
+            d = poisson (mean, 1)[0]
+        G = self.g[T.parent[v]] # Genome()
         for i in xrange(0, d):
             G = G.rand_neigh()
         self.g[v] = G
-        if self.T.left[v] < v: self._simul(self.T.left[v], mean)
-        if self.T.right[v] < v: self._simul(self.T.right[v], mean)
+        if T.left[v] < v: self._simul(T.left[v], mean)
+        if T.right[v] < v: self._simul(T.right[v], mean)
 
     def simul_data (self, mean, m):
-        self.g[self.T.N - 1] = Genome (id_genome (m))
-        self._simul (self.T.left[self.T.N - 1], mean)
-        self._simul (self.T.right[self.T.N - 1], mean)
+        T = self.T
+        self.g[T.N - 1] = Genome (id_cgenome (m))             # TODO id_genome alebo id_cgenome?
+        self._simul (T.left[T.N - 1], mean)
+        self._simul (T.right[T.N - 1], mean)
+        self.input = []
+        for i in xrange(0, T.n):
+            self.input.append([self.g[i]])
         f = open (self.wdir + os.sep + 'true-hist.txt', 'w')
         f.write ('# ' + str(self.score()) + '\n')
         f.write (self.__str__())
