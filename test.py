@@ -13,15 +13,15 @@ from CircRev import CircRev
 from copy import copy
 from random import randint
 
-wdir = 't100n20m'
+wdir = 't20n20m'
 History.Genome = CircDCJ
 
-n, mean = 30, 8
+n, mean = 20, 5
 suf = str(randint(0,999))
-F = open('tst3-'+suf, 'a')
+F = open('tsti-'+suf, 'a')
 F.write("""
-# 100 vrcholov; 30 markerov, priemerne 8 reverzov na hranu (2 hrany z korena su 1 hrana)
-# 1 historiu vytvorime nahodne a na kazdej spustime 10x steinerizaciu;
+# 20 vrcholov; 20 markerov, priemerne 5 reverzov na hranu (2 hrany z korena su 1 hrana)
+# 10 historii vytvorime nahodne a na kazdej spustime 10x steinerizaciu;
 # zaciname z historie, ktoru vyrobime tak, ze z nahodnych 3 potomkov spocitame median
 # nasledne po kazdej stein. skusime better_neighbours a all_neighbours, ci to nevieme zlepsit
 """)
@@ -40,6 +40,18 @@ for i in xrange(0,10):
     Genome.median = Genome.single_median
 
     F.write(str(a)+'   ')
+    if True:
+    	h.rand_hist(1)
+    	h.cand()
+    	#h.fill_in_desc()
+    	h.init_hist(10)
+    	h.opt_neigh()
+    
+    	h.local_opt = h.local_opt_steinerization
+    	h.local_opt()
+    	print h.score(), '------------------------------------------------'
+        a = h.score()
+        F.write(str(a)+'   ')
     for k in xrange(0,10):
     	h.rand_hist(1)
     	h.cand()
@@ -51,18 +63,20 @@ for i in xrange(0,10):
     	h.local_opt()
     	print h.score(), '------------------------------------------------'
     	b = h.score()
-    	#h.local_opt = h.local_opt_neighbours 
-    	h.local_opt = h.local_opt_better_neighbours
-    	h.local_opt()
-    	print h.score(), '================================================'
-    	c = h.score()
+        if False:
+      	  #h.local_opt = h.local_opt_neighbours 
+    	  h.local_opt = h.local_opt_better_neighbours
+    	  h.local_opt()
+    	  print h.score(), '================================================'
+    	  c = h.score()
 
-    	h.local_opt = h.local_opt_neighbours 
-    	h.local_opt()
-    	print h.score(), '================================================'
-    	d = h.score()
+    	  h.local_opt = h.local_opt_neighbours 
+    	  h.local_opt()
+    	  print h.score(), '================================================'
+    	  d = h.score()
     	#F.write(str(b)+' '+str(c)+' '+'   ') #str(d)+'   ')
-    	F.write(str(b)+' '+str(c)+' '+str(d)+'   ')
+    	#F.write(str(b)+' '+str(c)+' '+str(d)+'   ')
+    	F.write(str(b)+' ')
     F.write('\n')
 #   stat.append([a,b,c])
 F.close()

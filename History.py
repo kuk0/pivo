@@ -563,7 +563,7 @@ class History:
         if x < a: return x
         else: return (x-a) + (b+1) 
          
-    def init_hist (self):
+    def init_hist (self, K=1):
         n, N = self.T.n, self.T.N
         left, right, parent = self.T.left, self.T.right, self.T.parent
         desc = []
@@ -572,7 +572,7 @@ class History:
         for i in xrange(n, N):
             desc.append((desc[left[i]][0],desc[right[i]][1]))
         for i in xrange(n, N-1):
-            for k in xrange(0,1): # TODO
+            for k in xrange(0,K): # TODO
                 z0 = self.g[randint(desc[left[i]][0],desc[left[i]][1])]
                 z1 = self.g[randint(desc[right[i]][0],desc[right[i]][1])]
                 z2 = self.g[self._rand_leaf(desc[i])]
